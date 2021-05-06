@@ -3,7 +3,7 @@ from paypalrestsdk import Payment, configure
 
 def makepayment(payment_data: dict):
   configure({
-      'mode': 'sandbox',  #sandbox or live
+      'mode': 'sandbox',
       'client_id': 'AeXYJ7z63_L9HPCe5-Oi5_YeXeosZQa0nhKjrU0RJERC0L7x4p-Gid9X08nY-E1z729sO4Dd8H_m2pun',
       'client_secret': 'EIYkEWVOCJjFt4RD1s1vo7r6kWe1-sqqU1ZuM8T095CbvhBI6dAioHraoRaGUHLElox5x20zkTwd8PhN'
   })
