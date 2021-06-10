@@ -1,4 +1,4 @@
-from server.accounts.accounts import SmartPayAccount
+from server.engine.accounts import SmartPayAccount
 from server.config.source import dbcursor, ServerConfig
 
 

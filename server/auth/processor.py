@@ -1,7 +1,7 @@
 from server.config.source import dbcursor
 from server.security.security import Security
 from pymongo.collection import ReturnDocument
-from server.accounts.accounts import SmartPayAccount
+from server.engine.accounts import SmartPayAccount
 
 
 class Auth:

@@ -6,7 +6,7 @@ from server.statistics.devices import Devices
 
 class SmartPay(Namespace):
   def on_connect(self):
-    emit("connect", True, room=request.sid)
+    emit("statistics", Devices().connectdevice())
 
   def on_signup(self, account):
     emit("signup", Auth.signup(account), room=request.sid)
