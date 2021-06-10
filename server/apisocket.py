@@ -1,10 +1,10 @@
 from flask import request
 from server.auth.processor import Auth
 from flask_socketio import Namespace, emit
-from server.statistics.processor import Statistics
+from server.statistics.devices import Devices
 
 
-class APISocket(Namespace):
+class SmartPay(Namespace):
   def on_connect(self):
     emit("connect", True, room=request.sid)
 
@@ -24,4 +24,4 @@ class APISocket(Namespace):
     emit("updateuser", Auth.updateuser(userdata), room=request.sid)
 
   def on_disconnect(self):
-    emit("statistics", Statistics.disconnect_app(request.sid))
+    emit("statistics", Devices().disconnectdevice())
