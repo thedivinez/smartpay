@@ -9,7 +9,7 @@ class SmartPayTransactions:
   def recordtransaction(self, transaction):
     transaction["date"] = ServerConfig.today
     transaction["creator"] = self.data["username"]
-    dbcursor.transactions.insert_one(transaction)
+    dbcursor.get_collection(ServerConfig.today).insert_one(transaction)
 
   def calculatecharges(self, transaction, amount):
     return dbcursor.configs.find_one({"type": "charges"}, {transaction: 1})[transaction] * amount

@@ -1,6 +1,6 @@
 from flask import request
-from server.config.source import prepareserver
-from server.config.source import ServerConfig, dbcursor
+from server.config.source import dbcursor
+from server.config.source import ServerConfig
 
 
 class Devices:
@@ -10,12 +10,12 @@ class Devices:
 
   def connectdevice(self):
     "sets device online status to True."
-    prepareserver()  # ==== create collection if not exists =====
-    _filter = {"streaming": True, "devices.deviceid": self.device}
+    ServerConfig.prepareserver  # === create collection if not exists ===
+    _filter = {"type": "diviceactivity", "devices.deviceid": self.device}
     if not self.device == "admin":
       if not self.initdb.find_one(_filter):
         device = {"deviceid": self.device, "online": True}
-        self.initdb.update_one({"streaming": True}, {"$push": {"devices": device}})
+        self.initdb.update_one({"type": "diviceactivity"}, {"$push": {"devices": device}})
       else:
         self.initdb.update_one(_filter, {"$set": {"devices.$.online": True}})
     print(f"{self.device} has connected.")
@@ -23,13 +23,13 @@ class Devices:
   def disconnectdevice(self):
     "sets device online status to False."
     if not self.device == "admin":
-      _filter = {"streaming": True, "devices.deviceid": self.device}
+      _filter = {"type": "diviceactivity", "devices.deviceid": self.device}
       self.initdb.update_one(_filter, {"$set": {"devices.$.online": False}})
     print(f"{self.device} disconnected.")
 
   def getdeviceshistory(self):
     "returns a list of devices that came online that day."
-    return self.initdb.find_one({"streaming": True}).get("devices")
+    return self.initdb.find_one({"type": "diviceactivity"}).get("devices")
 
   def getconnecteddevices(self):
     "returns a list of connected devices"
