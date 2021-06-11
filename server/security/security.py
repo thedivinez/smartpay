@@ -1,7 +1,7 @@
 from cryptography.fernet import Fernet
 
 
-class Security:
+class SmartPaySecurity:
   def __init__(self, data: dict) -> None:
     self.data = data
     self.apikey = data.get("apikey")

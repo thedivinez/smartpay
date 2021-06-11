@@ -1,6 +1,6 @@
 from uuid import uuid4
 from server.config.source import dbcursor
-from server.security.security import Security
+from server.security.security import SmartPaySecurity
 
 
 class SmartPayAccount:
@@ -21,8 +21,8 @@ class SmartPayAccount:
     self.user["balance"] = 0
     self.user["code"] = str(uuid4().int)[:6]
     self.user["accountnumber"] = self.genaccountnumber
-    self.user["apikey"] = Security.create_encryption_key()
-    self.user['password'] = Security(self.user).encrypt(self.user['password'])
+    self.user["apikey"] = SmartPaySecurity.create_encryption_key()
+    self.user['password'] = SmartPaySecurity(self.user).encrypt(self.user['password'])
     return self.user
 
   @property
