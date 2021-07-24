@@ -1,39 +1,47 @@
-from flask import request
 from server.config.source import dbcursor
 from server.config.source import ServerConfig
 
 
-class Devices:
-  def __init__(self):
-    self.device = request.args.get("deviceId")
-    self.initdb = dbcursor.get_collection(ServerConfig.today)
+class SystemUsers(object):
+    def __init__(self, data: dict):
+        self.user = data.get("username")
+        self.date = ServerConfig().today
+        self.initdb = dbcursor.get_collection("useractivity")
 
-  def connectdevice(self):
-    "sets device online status to True."
-    ServerConfig.prepareserver  # === create collection if not exists ===
-    _filter = {"type": "diviceactivity", "devices.deviceid": self.device}
-    if not self.device == "admin":
-      if not self.initdb.find_one(_filter):
-        device = {"deviceid": self.device, "online": True}
-        self.initdb.update_one({"type": "diviceactivity"}, {"$push": {"devices": device}})
-      else:
-        self.initdb.update_one(_filter, {"$set": {"devices.$.online": True}})
-    print(f"{self.device} has connected.")
+    def prepareuseractivity(self):
+        if not self.initdb.find_one({"date": self.date}):
+            self.initdb.insert_one({"date": self.date, "users": []})
 
-  def disconnectdevice(self):
-    "sets device online status to False."
-    if not self.device == "admin":
-      _filter = {"type": "diviceactivity", "devices.deviceid": self.device}
-      self.initdb.update_one(_filter, {"$set": {"devices.$.online": False}})
-    print(f"{self.device} disconnected.")
+    def getusershistory(self):
+        "returns a list of users that came online that day."
+        return self.initdb.find_one({"date": self.date}).get("users")
 
-  def getdeviceshistory(self):
-    "returns a list of devices that came online that day."
-    return self.initdb.find_one({"type": "diviceactivity"}).get("devices")
+    @property
+    def connectuser(self):
+        "set online status true"
+        self.prepareuseractivity()
+        sfilter = {"date": self.date, "users.username": self.user}
+        if self.user and not self.user == "admin":
+            if self.initdb.find_one(sfilter):
+                self.initdb.update_one(sfilter, {"$set": {"users.$.online": True}})
+            else:
+                user = {"username": self.user, "online": True}
+                self.initdb.update_one({"date": self.date}, {"$push": {"users": user}})
+        print(f"=== {self.user} has connected.")
+        return self.getconnectedusers
 
-  def getconnecteddevices(self):
-    "returns a list of connected devices"
-    _cond = [{"$ifNull": ["$online", True]}, True]
-    redact = {"$redact": {"$cond": [{"$eq": _cond}, "$$DESCEND", "$$PRUNE"]}}
-    devices = list(self.initdb.aggregate([{"$match": {"devices.online": True}}, redact]))
-    return devices[0].get("devices") if devices else []
+    @property
+    def getconnectedusers(self):
+        "returns a list of connected users"
+        _cond = [{"$ifNull": ["$online", True]}, True]
+        redact = {"$redact": {"$cond": [{"$eq": _cond}, "$$DESCEND", "$$PRUNE"]}}
+        users = list(self.initdb.aggregate([{"$match": {"users.online": True}}, redact]))
+        return users[0].get("users") if users else []
+
+    @property
+    def disconnectuser(self):
+        "sets online status false"
+        if not self.user == "admin":
+            self.initdb.update_one({"date": self.date, "users.username": self.user}, {"$set": {"users.$.online": False}})
+        print(f"=== {self.user} disconnected.")
+        return self.getconnectedusers

@@ -1,5 +1,6 @@
 """gunicorn flask server configuration."""
 from os import environ, path, getcwd
+
 workers = 1
 daemon = True
 loglevel = 'info'

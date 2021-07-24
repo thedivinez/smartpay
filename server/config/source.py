@@ -11,12 +11,10 @@ app.config["JSONIFY_PRETTYPRINT_REGULAR"] = False
 
 
 class ServerConfig:
-  @property
-  def today():
-    now_utc = datetime.now(timezone("UTC"))
-    now_africa = now_utc.astimezone(timezone("Africa/Harare"))
-    return now_africa.strftime("%m-%d-%Y %H:%M:%S")
+    def __init__(self, action=None) -> None:
+        self.action = action
 
-  @property
-  def prepareserver():
-    return
+    @property
+    def today(self) -> str:
+        now_africa = datetime.now(timezone("UTC")).astimezone(timezone("Africa/Harare"))
+        return now_africa.strftime("%m-%d-%Y %H:%M:%S" if self.action == "datetime" else "%m-%d-%Y")
