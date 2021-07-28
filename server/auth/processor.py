@@ -9,10 +9,10 @@ class SmartPayAuth:
         self.user = user
 
     def checknumber(self):
-        return dbcursor.users.find_one({"phome": self.user.get("phone")}, {"_id": 0})
+        return dbcursor.accounts.find_one({"phome": self.user.get("phone")}, {"_id": 0})
 
     def finduser(self):
-        return dbcursor.users.find_one({"username": self.user.get("username")}, {"_id": 0})
+        return dbcursor.accounts.find_one({"username": self.user.get("username")}, {"_id": 0})
 
     @property
     def signin(self):
@@ -32,20 +32,8 @@ class SmartPayAuth:
                 return self.sendcode("Account not verified please enter OTP to continue.")
         return {"status": "error", "message": "Invalid login credentials."}
 
-    @property
-    def signup(self):
-        if self.finduser():
-            return {"status": "error", "message": "Username already in use."}
-        if self.checknumber():
-            return {"status": "error", "message": "The phone number is associated with another account please go to sign in if it's your account."}
-        self.user = SmartPayAccount(self.user).createaccount
-        if dbcursor.users.insert_one(self.user):
-            return self.sendcode("Account created please enter OTP to continue.")
-        return {"status": "error", "message": "Failed to create user."}
-
     def sendcode(self, message=None):
         user = self.finduser()
-        print(user.get("code"))
         return {"status": "verifycode", "message": message if message else "Code sent."}
 
     @property
@@ -57,7 +45,18 @@ class SmartPayAuth:
         return {"status": "error", "message": "Invalid code"}
 
     @property
+    def signup(self):
+        if self.finduser():
+            return {"status": "error", "message": "Username already in use."}
+        if self.checknumber():
+            return {"status": "error", "message": "The phone number is associated with another account please go to sign in if it's your account."}
+        self.user = SmartPayAccount(self.user).createaccount
+        if dbcursor.accounts.insert_one(self.user):
+            return self.sendcode("Account created please enter OTP to continue.")
+        return {"status": "error", "message": "Failed to create user."}
+
+    @property
     def updateuser(self):
         _filter = {"username": self.user.get("username")}
-        response = dbcursor.users.find_one_and_update(_filter, {"$set": self.user}, projection={'_id': 0}, return_document=ReturnDocument.AFTER)
+        response = dbcursor.accounts.find_one_and_update(_filter, {"$set": self.user}, projection={'_id': 0}, return_document=ReturnDocument.AFTER)
         return response if response else {}

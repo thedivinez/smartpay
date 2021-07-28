@@ -7,40 +7,40 @@ from server.engine.transactions import SmartPayTransactions
 
 class SmartPay(Namespace):
 
-    # ============================== Connect User ===============================
+    # ================================================ Connect User =================================================
 
     def on_connect(self):
         emit("statistics", SystemUsers(request.args).connectuser)
 
-    # ============================== Authentication =============================
+    # ================================================ Authentication ===============================================
 
     def on_signup(self, account):
-        emit("signup", SmartPayAuth(account).signup, room=request.sid)
+        emit("signup", SmartPayAuth({**account, **request.args}).signup, room=request.sid)
 
     def on_signin(self, account):
-        emit("signin", SmartPayAuth(account).signin, room=request.sid)
+        emit("signin", SmartPayAuth({**account, **request.args}).signin, room=request.sid)
 
     def on_resendcode(self, account):
-        emit("resendcode", SmartPayAuth(account).sendcode(), room=request.sid)
+        emit("resendcode", SmartPayAuth({**account, **request.args}).sendcode(), room=request.sid)
 
     def on_verifycode(self, account):
-        emit("verifycode", SmartPayAuth(account).verifycode, room=request.sid)
+        emit("verifycode", SmartPayAuth({**account, **request.args}).verifycode, room=request.sid)
 
     def on_updateuser(self, account):
-        emit("updateuser", SmartPayAuth(account).updateuser, room=request.sid)
+        emit("updateuser", SmartPayAuth({**account, **request.args}).updateuser, room=request.sid)
 
-    # =============================== Transactions ==============================
+    # ================================================ Transactions =================================================
 
-    def on_deposit(self, data):
-        emit("deposit", SmartPayTransactions(data).deposit)
+    def on_deposit(self, account):
+        emit("deposit", SmartPayTransactions({**account, **request.args}).deposit)
 
-    def on_withdraw(self, data):
-        emit("withdraw", SmartPayTransactions(data).withdraw)
+    def on_withdraw(self, account):
+        emit("withdraw", SmartPayTransactions({**account, **request.args}).withdraw)
 
-    def on_transferfunds(self, data):
-        emit("transferfunds", SmartPayTransactions(data).transferfunds)
+    def on_transferfunds(self, account):
+        emit("transferfunds", SmartPayTransactions({**account, **request.args}).transferfunds)
 
-    # ============================== Disconnect User =============================
+    # ================================================ Disconnect User ==============================================
 
     def on_disconnect(self):
         emit("statistics", SystemUsers(request.args).disconnectuser)
