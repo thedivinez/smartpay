@@ -6,17 +6,17 @@ from server.security.security import SmartPaySecurity
 
 class SmartPayAuth:
     def __init__(self, user: dict) -> None:
+        for unwanded in ["EIO", "transport"]:
+            del user[unwanded]
         self.user = user
 
-    def checknumber(self):
-        return dbcursor.accounts.find_one({"phome": self.user.get("phone")}, {"_id": 0})
-
-    def finduser(self):
-        return dbcursor.accounts.find_one({"username": self.user.get("username")}, {"_id": 0})
+    @property
+    def account(self):
+        return SmartPayAccount({"username": self.user["username"]}).findaccount
 
     @property
     def signin(self):
-        existing = self.finduser()
+        existing = self.account
         if existing:
             data = {}
             data["apikey"] = existing.get("apikey")
@@ -33,22 +33,26 @@ class SmartPayAuth:
         return {"status": "error", "message": "Invalid login credentials."}
 
     def sendcode(self, message=None):
-        user = self.finduser()
+        user = self.account
         return {"status": "verifycode", "message": message if message else "Code sent."}
 
     @property
     def verifycode(self):
-        if self.finduser().get("code") == self.user.get("code"):
+        if self.account.get("code") == self.user.get("code"):
+            account = self.account
             self.user["verified"] = True
             if self.updateuser.get("verified"):
-                return {"status": "success", "message": "Account verified"}
+                del account['code']
+                del account["apikey"]
+                del account["password"]
+                return {"status": "success", "message": "Account verified", "account": account}
         return {"status": "error", "message": "Invalid code"}
 
     @property
     def signup(self):
-        if self.finduser():
+        if self.account:
             return {"status": "error", "message": "Username already in use."}
-        if self.checknumber():
+        if SmartPayAccount({"phone": self.user.get("phone")}).findaccount:
             return {"status": "error", "message": "The phone number is associated with another account please go to sign in if it's your account."}
         self.user = SmartPayAccount(self.user).createaccount
         if dbcursor.accounts.insert_one(self.user):

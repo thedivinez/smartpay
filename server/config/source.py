@@ -4,10 +4,11 @@ from pytz import timezone
 from datetime import datetime
 from flask_socketio import SocketIO
 
+CONNECTION_STRING = "mongodb+srv://divine01:imwinning@splitcluster.aui7k.azure.mongodb.net/thedivinez?retryWrites=true&w=majority"
 app = Flask(__name__)
 socketio = SocketIO(app, async_mode=None)
-dbcursor = pymongo.MongoClient().smartpay
 app.config["JSONIFY_PRETTYPRINT_REGULAR"] = False
+dbcursor = pymongo.MongoClient(CONNECTION_STRING).smartpay
 
 
 class ServerConfig:

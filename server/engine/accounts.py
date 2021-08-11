@@ -17,6 +17,10 @@ class SmartPayAccount:
         return f"3{number}{account}"
 
     @property
+    def findaccount(self):
+        return dbcursor.accounts.find_one(self.user, {"_id": 0})
+
+    @property
     def createaccount(self):
         self.user["balance"] = 0
         self.user["code"] = str(uuid4().int)[:6]

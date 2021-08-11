@@ -6,46 +6,50 @@ class SmartPayTransactions:
     def __init__(self, data: dict):
         self.data = data
         self.username = data["username"]
+        self.amount = float(data["amount"])
         self.date = ServerConfig("datetime").today
-        self.data["amount"] = float(data["amount"])
 
-    def addtosmartpayaccount(self, amount):
-        dbcursor.accounts.update_one({"accountnumber": "smartpay01"}, {"$inc": {"balance": amount}})
+    def addtosmartpayaccount(self, charges):
+        dbcursor.accounts.update_one({"accountnumber": "smartpay01"}, {"$inc": {"balance": charges}})
 
     def calculatecharges(self, transaction, amount):
         return dbcursor.accounts.find_one({"accountnumber": "smartpay01"}, {transaction: 1})[transaction] * amount
 
     def recordtransaction(self, transaction):
-        dbcursor.get_collection(self.date).insert_one({**transaction, **{"date": self.date, "creator": self.username}})
-
-    @property
-    def deposit(self):
-        self.recordtransaction({"type": "deposit", "amount": self.data["amount"]})
-        newbalance = SmartPayAccount(self.data).currentaccount["balance"] + self.data["amount"]
-        dbcursor.accounts.update_one({"username": self.username}, {'$set': {'balance': newbalance}})
-        return {"status": "success", "message": "Deposit is successful and the balance in the account is $%f" % newbalance}
+        dbcursor.get_collection(ServerConfig().today).insert_one({**transaction, **{"date": self.date, "creator": self.username}})
 
     @property
     def withdraw(self):
+        charges = self.calculatecharges("withdrawal", self.amount)
         balance = SmartPayAccount(self.data).currentaccount["balance"]
-        charges = self.calculatecharges("withdrawal", self.data["amount"])
-        if balance >= self.data["amount"] + charges:
+        if balance >= self.amount + charges:
             self.addtosmartpayaccount(charges)
-            newbalance = balance - self.data["amount"] - charges
-            self.recordtransaction({"type": "withdrawal", "amount": self.data["amount"]})
+            newbalance = balance - self.amount - charges
+            print(f"{self.username} withdrew {self.amount}")
+            self.recordtransaction({"type": "withdrawal", "amount": self.amount})
             dbcursor.accounts.update_one({"username": self.username}, {'$set': {'balance': newbalance}})
             return {"status": "success", "message": "The withdraw was successfull. Your new balance is $%f" % newbalance}
-        return {"status": "success", "message": "Withdrawal amount exceeds current balance. Your current account balance is $%f" % balance}
+        return {"status": "error", "message": "Withdrawal amount exceeds current balance. Your current account balance is $%f" % balance}
 
     @property
     def transferfunds(self):
+        charges = self.calculatecharges("transfer", self.amount)
         balance = SmartPayAccount(self.data).currentaccount["balance"]
-        charges = self.calculatecharges("transfer", self.data["amount"])
-        if balance >= self.data["amount"] + charges:
-            self.addtosmartpayaccount(charges)
-            newbalance = balance - self.data["amount"] - charges
-            dbcursor.accounts.update_one({"username": self.username}, {'$set': {'balance': newbalance}})
-            dbcursor.accounts.update_one({"username": self.data["recipient"]}, {'$inc': {'balance': self.data["amount"]}})
-            self.recordtransaction({"type": "transfer", "amount": self.data["amount"], "recipient": self.data["recipient"]})
-            return {"status": "success", "message": "Transfer successfull. Your new balance is $%f" % newbalance}
-        return {"status": "success", "message": "Transfer amount exceeds current balance. Your current account balance is $%f" % balance}
+        if SmartPayAccount({"username": self.data['recipient']}).findaccount:
+            if balance >= self.amount + charges:
+                self.addtosmartpayaccount(charges)
+                newbalance = balance - self.amount - charges
+                print(f"{self.username} transfered {self.amount} to {self.data['recipient']}")
+                dbcursor.accounts.update_one({"username": self.username}, {'$set': {'balance': newbalance}})
+                dbcursor.accounts.update_one({"username": self.data["recipient"]}, {"$inc": {"balance": self.amount}})
+                self.recordtransaction({"type": "transfer", "amount": self.amount, "recipient": self.data["recipient"]})
+                return {"status": "success", "message": f"${self.amount} transfer was successfull. Your new balance is ${newbalance}"}
+            return {"status": "error", "message": f"Transfer amount exceeds current balance. Your current account balance is ${balance}"}
+        return {"status": "error", "message": "Transfer failed account does not exist please make sure you have the correct username of the recipient."}
+
+    @property
+    def deposit(self):
+        self.recordtransaction({"type": "deposit", "amount": self.amount})
+        newbalance = SmartPayAccount(self.data).currentaccount["balance"] + self.amount
+        dbcursor.accounts.update_one({"username": self.username}, {"$set": {"balance": newbalance}})
+        return {"status": "success", "balance": newbalance, "message": "Deposit is successful and the balance in the account is $%f" % newbalance}
